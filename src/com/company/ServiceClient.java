@@ -4,16 +4,15 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.MessageDigest;
 import java.util.ArrayList;
-import java.security.*;
-import java.util.Arrays;
+
 
 
 public class ServiceClient implements Runnable {
 
     private Socket clientSocket;
     private BufferedReader in = null;
+    private String defaultPath;
 
     public ServiceClient(Socket client) {
         this.clientSocket = client;
@@ -22,29 +21,32 @@ public class ServiceClient implements Runnable {
     @Override
     public void run() {
         try {
+
+            defaultPath = "C:\\Users\\Fyza\\IdeaProjects\\AFTP_FileServer\\FileFolder\\";
+
             in = new BufferedReader(new InputStreamReader(
                     clientSocket.getInputStream()));
             String clientSelection;
             while ((clientSelection = in.readLine()) != null) {
                 switch (clientSelection) {
-                    case "LIST / AFTP/1.0":
-                        listFile();
+                    case "LIST":
+                        listFiles();
                         continue;
-                    case "PUT / AFTP/1.0":
-                        receiveFile();
+                    case "PUT":
+                        putFileOnServer();
                         continue;
-                    case "GET / AFTP/1.0":
-                        String outGoingFileName;
-                        while ((outGoingFileName = in.readLine()) != null) {
-                            sendFile(outGoingFileName);
+                    case "GET":
+                        String fileToGet;
+                        while ((fileToGet = in.readLine()) != null) {
+                            getFileFromServer(fileToGet);
                         }
                         continue;
-                    case "DELETE / AFTP/1.0":
-                        deleteFile();
+                    case "DELETE":
+                        String fileToDelete;
+                        while ((fileToDelete = in.readLine()) != null) {
+                            deleteFile(fileToDelete);
+                        }
                         continue;
-                    case "EXIT":
-                        System.exit(1);
-                        break;
                     default:
                         System.out.println("Incorrect command received.");
                         break;
@@ -54,11 +56,11 @@ public class ServiceClient implements Runnable {
         }
     }
 
-    private void listFile() throws IOException {
+    private void listFiles() throws IOException {
         DataOutputStream dos = null;
         ArrayList<String> files = new ArrayList<String>();
         try {
-            File folder = new File("C:\\Users\\Fyza\\IdeaProjects\\NetwerkenEindopdrachtServer\\out\\FileFolder");
+            File folder = new File(defaultPath);
             File[] listOfFiles = folder.listFiles();
 
             for (int i = 0; i < listOfFiles.length; i++) {
@@ -85,14 +87,20 @@ public class ServiceClient implements Runnable {
             System.err.println("500 Server Error");
         }
     }
-    public void receiveFile() {
+    public void putFileOnServer() {
+
+        // 200 OK
+        // 423 Locked
+
+
         try {
             int bytesRead;
 
             DataInputStream clientData = new DataInputStream(clientSocket.getInputStream());
 
             String fileName = clientData.readUTF();
-            OutputStream output = new FileOutputStream(fileName);
+            String filePath = defaultPath + fileName;
+            OutputStream output = new FileOutputStream(filePath);
             long size = clientData.readLong();
             byte[] buffer = new byte[1024];
             while (size > 0 && (bytesRead = clientData.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
@@ -109,10 +117,15 @@ public class ServiceClient implements Runnable {
         }
     }
 
-    public void sendFile(String fileName) {
+    public void getFileFromServer(String fileName) {
         String FilePathName;
 
-        FilePathName = "C:\\Users\\Fyza\\IdeaProjects\\NetwerkenEindopdrachtServer\\out\\FileFolder\\" + fileName;
+        //200 Ok *
+        //404 Not Found *
+        //418 Gone **
+
+
+        FilePathName = defaultPath + fileName;
         DataOutputStream dos = null;
         try {
             File myFile = new File(FilePathName);  //handle file reading
@@ -124,11 +137,11 @@ public class ServiceClient implements Runnable {
             DataInputStream dis = new DataInputStream(bis);
             dis.readFully(mybytearray, 0, mybytearray.length);
 
+            //creating outputstream for return value
+            OutputStream os = clientSocket.getOutputStream();
+            dos = new DataOutputStream(os);
 
-            OutputStream os = clientSocket.getOutputStream();  //handle file send over socket
-            /*DataOutputStream*/ dos = new DataOutputStream(os); //Sending file name and file size to the server
-
-            dos.writeUTF("GET AFTP/1.0 200 OK");
+            dos.writeUTF("200 OK");
             dos.writeUTF(myFile.getName());
             dos.writeLong(mybytearray.length);
             dos.write(mybytearray, 0, mybytearray.length);
@@ -138,14 +151,60 @@ public class ServiceClient implements Runnable {
         } catch (Exception e) {
             System.err.println("File does not exist!");
             try {
-                dos.writeUTF("GET AFTP/1.0 404 Not found");
+                OutputStream os = clientSocket.getOutputStream();
+                dos = new DataOutputStream(os);
+                dos.writeUTF("404 Not found");
+                dos.flush();
             } catch (IOException ex) {
-                System.err.println("Error sending error");
+                System.err.println("Cannot send to client");
             }
         }
     }
 
-    private void deleteFile() {
+    private void deleteFile(String fileName) {
+
+        String fullPath = defaultPath + fileName;
+        File file = new File(fullPath);
+
+        //functie omheen check of bestaat ja door nee 404 Not found
+        //
+        //
+        if(file.delete())
+        {
+
+            try {
+                //creating outputstream for return value
+                DataOutputStream dos = null;
+                OutputStream os = clientSocket.getOutputStream();
+
+                dos = new DataOutputStream(os);
+                dos.writeUTF("200 OK");
+                dos.flush();
+
+                System.out.println("File deleted successfully, response send to client");
+
+            } catch (IOException e) {
+                System.out.println("File deleted successfully, could not return response to client");
+            }
+
+        }
+        else
+        {
+            System.out.println("Failed to delete the file, in use 423 locked");
+            try {
+                DataOutputStream dos = null;
+                OutputStream os = clientSocket.getOutputStream();
+
+                dos = new DataOutputStream(os);
+                dos.writeUTF("423 OK");
+                dos.flush();
+
+            } catch (IOException e) {
+                System.out.println("Failed not deleted, cannot send respond to client.");
+            }
+
+        }
+
     }
 
     private static String readAllBytes(String filePath)
