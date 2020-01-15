@@ -55,13 +55,10 @@ public class ServiceClient implements Runnable {
     }
 
     private void listFile() throws IOException {
-        //@micheal dit is nieuw
-        //ik weet helaas niet hoe ik de inhoud correct achter de file+timestamp kan zetten en deze weer goed terug naar de client kan sturen.
-        //de methode readAllBytes moet hier mogelijklijk voor aangepast worden.
         DataOutputStream dos = null;
         ArrayList<String> files = new ArrayList<String>();
         try {
-            File folder = new File("C:\\Users\\mvandalen\\IdeaProjects\\NetwerkenEindopdrachtServer\\out\\FileFolder");
+            File folder = new File("C:\\Users\\Fyza\\IdeaProjects\\NetwerkenEindopdrachtServer\\out\\FileFolder");
             File[] listOfFiles = folder.listFiles();
 
             for (int i = 0; i < listOfFiles.length; i++) {
@@ -113,10 +110,12 @@ public class ServiceClient implements Runnable {
     }
 
     public void sendFile(String fileName) {
+        String FilePathName;
 
+        FilePathName = "C:\\Users\\Fyza\\IdeaProjects\\NetwerkenEindopdrachtServer\\out\\FileFolder\\" + fileName;
         DataOutputStream dos = null;
         try {
-            File myFile = new File(fileName);  //handle file reading
+            File myFile = new File(FilePathName);  //handle file reading
             byte[] mybytearray = new byte[(int) myFile.length()];
 
             FileInputStream fis = new FileInputStream(myFile);
