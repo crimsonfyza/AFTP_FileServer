@@ -2,6 +2,7 @@ package com.company;
 
 import java.net.*;
 import java.io.*;
+import java.security.Provider;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -31,8 +32,20 @@ public class FileServer {
 
                 t.start();
 
+                DataOutputStream dos = null;
+                OutputStream os = clientSocket.getOutputStream();
+
+                dos = new DataOutputStream(os);
+                dos.writeUTF("200 OK - Server connected");
+                dos.flush();
+
             } catch (Exception e) {
-                System.err.println("Error in connection attempt.");
+                DataOutputStream dos = null;
+                OutputStream os = clientSocket.getOutputStream();
+
+                dos = new DataOutputStream(os);
+                dos.writeUTF("500 Server Error");
+                dos.flush();
             }
         }
     }

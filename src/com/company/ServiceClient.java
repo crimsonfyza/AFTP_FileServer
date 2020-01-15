@@ -18,6 +18,7 @@ public class ServiceClient implements Runnable {
         this.clientSocket = client;
     }
 
+
     @Override
     public void run() {
         try {
@@ -87,20 +88,22 @@ public class ServiceClient implements Runnable {
             System.err.println("500 Server Error");
         }
     }
-    public void putFileOnServer() {
+    public void putFileOnServer() throws IOException {
 
         // 200 OK
         // 423 Locked
-
+        String filePath = null;
+        OutputStream output = null;
+        DataInputStream clientData = null;
 
         try {
             int bytesRead;
 
-            DataInputStream clientData = new DataInputStream(clientSocket.getInputStream());
+            clientData = new DataInputStream(clientSocket.getInputStream());
 
             String fileName = clientData.readUTF();
-            String filePath = defaultPath + fileName;
-            OutputStream output = new FileOutputStream(filePath);
+            filePath = defaultPath + fileName;
+            output = new FileOutputStream(filePath);
             long size = clientData.readLong();
             byte[] buffer = new byte[1024];
             while (size > 0 && (bytesRead = clientData.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
@@ -112,21 +115,31 @@ public class ServiceClient implements Runnable {
             clientData.close();
 
             System.out.println("File "+fileName+" received from client.");
+            returnStatus("200 OK");
+
         } catch (IOException ex) {
             System.err.println("Client error. Connection closed.");
+            File filePathCheck = new File(filePath);
+            Boolean defaultPathCheck = filePathCheck.exists();
+            //error file couldnt upload
+            // so if the file existed, it would be locked, if it didnt exist theres a server error.
+            if (defaultPathCheck == true) {
+                //overwrite failed
+                returnStatus("423 Locked");
+            } else {
+                //new file couldnt be made.
+                returnStatus("500 Server Error");
+            }
+            output.close();
+            clientData.close();
+
         }
     }
 
-    public void getFileFromServer(String fileName) {
+    public void getFileFromServer(String fileName)  {
         String FilePathName;
 
-        //200 Ok *
-        //404 Not Found *
-        //418 Gone **
-
-
         FilePathName = defaultPath + fileName;
-        DataOutputStream dos = null;
         try {
             File myFile = new File(FilePathName);  //handle file reading
             byte[] mybytearray = new byte[(int) myFile.length()];
@@ -139,7 +152,7 @@ public class ServiceClient implements Runnable {
 
             //creating outputstream for return value
             OutputStream os = clientSocket.getOutputStream();
-            dos = new DataOutputStream(os);
+            DataOutputStream dos = new DataOutputStream(os);
 
             dos.writeUTF("200 OK");
             dos.writeUTF(myFile.getName());
@@ -150,59 +163,29 @@ public class ServiceClient implements Runnable {
 
         } catch (Exception e) {
             System.err.println("File does not exist!");
-            try {
-                OutputStream os = clientSocket.getOutputStream();
-                dos = new DataOutputStream(os);
-                dos.writeUTF("404 Not found");
-                dos.flush();
-            } catch (IOException ex) {
-                System.err.println("Cannot send to client");
-            }
+            //returnStatus("404 Not found");
+
         }
     }
 
-    private void deleteFile(String fileName) {
+    private void deleteFile(String fileName) throws IOException {
 
         String fullPath = defaultPath + fileName;
         File file = new File(fullPath);
 
-        //functie omheen check of bestaat ja door nee 404 Not found
-        //
-        //
-        if(file.delete())
-        {
-
-            try {
-                //creating outputstream for return value
-                DataOutputStream dos = null;
-                OutputStream os = clientSocket.getOutputStream();
-
-                dos = new DataOutputStream(os);
-                dos.writeUTF("200 OK");
-                dos.flush();
-
-                System.out.println("File deleted successfully, response send to client");
-
-            } catch (IOException e) {
-                System.out.println("File deleted successfully, could not return response to client");
+        File checkFolder = new File(fullPath);
+        Boolean resultCheckFolder = checkFolder.exists();
+        //if folder doesnt exist throw
+        if (resultCheckFolder == true) {
+            //Run delete function and check if it worked.
+            if (file.delete()) {
+                returnStatus("200 OK");
+            } else {
+                //if file is in use send 423
+                returnStatus("423 Locked");
             }
-
-        }
-        else
-        {
-            System.out.println("Failed to delete the file, in use 423 locked");
-            try {
-                DataOutputStream dos = null;
-                OutputStream os = clientSocket.getOutputStream();
-
-                dos = new DataOutputStream(os);
-                dos.writeUTF("423 OK");
-                dos.flush();
-
-            } catch (IOException e) {
-                System.out.println("Failed not deleted, cannot send respond to client.");
-            }
-
+        } else {
+            returnStatus("404 Not found");
         }
 
     }
@@ -220,4 +203,14 @@ public class ServiceClient implements Runnable {
         }
         return content;
     }
+
+    private void returnStatus (String status) throws IOException {
+        DataOutputStream dos = null;
+        OutputStream os = clientSocket.getOutputStream();
+
+        dos = new DataOutputStream(os);
+        dos.writeUTF(status);
+        dos.flush();
+    }
+
 }
