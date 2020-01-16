@@ -10,11 +10,18 @@ import java.util.ArrayList;
 
 public class ServiceClient implements Runnable {
 
+    /**
+    * @param clientSocket   De connectie met de server over een specifieke poort
+    * @param in       Buffer om de inputstream heen, haalt input uit de commandline
+    * @param defaultPath default location where files are for commands: GET,PUT,DELETE,LIST
+    **/
+
     private Socket clientSocket;
     private BufferedReader in = null;
     private String defaultPath;
 
     public ServiceClient(Socket client) {
+        //bind connected client to socket.
         this.clientSocket = client;
     }
 
@@ -40,16 +47,12 @@ public class ServiceClient implements Runnable {
                         putFileOnServer();
                         continue;
                     case "GET":
-                        String fileToGet;
-                        while ((fileToGet = in.readLine()) != null) {
-                            getFileFromServer(fileToGet);
-                        }
+                        getFileFromServer(inputArray[1]);
                         continue;
                     case "DELETE":
-                        String fileToDelete;
-                        while ((fileToDelete = in.readLine()) != null) {
-                            deleteFile(fileToDelete);
-                        }
+
+                        deleteFile(inputArray[1]);
+
                         continue;
                     default:
                         returnStatus("<AFTP/1.0 400 Bad request");
@@ -60,7 +63,7 @@ public class ServiceClient implements Runnable {
         }
     }
 
-    private void listFiles() throws IOException {
+    private void listFiles() {
         DataOutputStream dos = null;
         ArrayList<String> files = new ArrayList<String>();
         try {
