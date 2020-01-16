@@ -29,7 +29,10 @@ public class ServiceClient implements Runnable {
                     clientSocket.getInputStream()));
             String clientSelection;
             while ((clientSelection = in.readLine()) != null) {
-                switch (clientSelection) {
+                // Een switch die de input afhandelt
+                String inputArray[] = clientSelection.split(" ", 3);
+
+                switch (inputArray[0]) {
                     case "LIST":
                         listFiles();
                         continue;
@@ -49,7 +52,7 @@ public class ServiceClient implements Runnable {
                         }
                         continue;
                     default:
-                        System.out.println("Incorrect command received.");
+                        returnStatus("<AFTP/1.0 400 Bad request");
                         break;
                 }
             }
@@ -77,7 +80,7 @@ public class ServiceClient implements Runnable {
             OutputStream os = clientSocket.getOutputStream();  //handle file send over socket
             /*DataOutputStream*/
             dos = new DataOutputStream(os); //Sending file name and file size to the server
-            dos.writeUTF("AFTP/1.0 200 OK\r\n");
+            dos.writeUTF("<AFTP/1.0 200 OK\r\n");
             dos.writeUTF("Content-Length: " + files.size() +"\r\n\r\n");
             for (String file : files ) {
                 dos.writeUTF(file+ "\r\n");
@@ -85,7 +88,7 @@ public class ServiceClient implements Runnable {
             dos.flush();
             dos.close();
         } catch (IOException ex) {
-            System.err.println("500 Server Error");
+            System.err.println("<AFTP/1.0 500 Server Error");
         }
     }
     public void putFileOnServer() throws IOException {
@@ -112,10 +115,10 @@ public class ServiceClient implements Runnable {
             }
 
             output.close();
-            clientData.close();
+            //clientData.close();
 
             System.out.println("File "+fileName+" received from client.");
-            returnStatus("200 OK");
+            returnStatus("<AFTP/1.0 200 OK");
 
         } catch (IOException ex) {
             System.err.println("Client error. Connection closed.");
@@ -125,13 +128,13 @@ public class ServiceClient implements Runnable {
             // so if the file existed, it would be locked, if it didnt exist theres a server error.
             if (defaultPathCheck == true) {
                 //overwrite failed
-                returnStatus("423 Locked");
+                returnStatus("<AFTP/1.0 423 Locked");
             } else {
                 //new file couldnt be made.
-                returnStatus("500 Server Error");
+                returnStatus("<AFTP/1.0 500 Server Error");
             }
             output.close();
-            clientData.close();
+            //clientData.close();
 
         }
     }
@@ -154,7 +157,7 @@ public class ServiceClient implements Runnable {
             OutputStream os = clientSocket.getOutputStream();
             DataOutputStream dos = new DataOutputStream(os);
 
-            dos.writeUTF("200 OK");
+            dos.writeUTF("<AFTP/1.0 200 OK");
             dos.writeUTF(myFile.getName());
             dos.writeLong(mybytearray.length);
             dos.write(mybytearray, 0, mybytearray.length);
@@ -179,13 +182,13 @@ public class ServiceClient implements Runnable {
         if (resultCheckFolder == true) {
             //Run delete function and check if it worked.
             if (file.delete()) {
-                returnStatus("200 OK");
+                returnStatus("<AFTP/1.0 200 OK");
             } else {
                 //if file is in use send 423
-                returnStatus("423 Locked");
+                returnStatus("<AFTP/1.0 423 Locked");
             }
         } else {
-            returnStatus("404 Not found");
+            returnStatus("<AFTP/1.0 404 Not found");
         }
 
     }

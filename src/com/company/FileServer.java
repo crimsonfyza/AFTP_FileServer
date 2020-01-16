@@ -36,7 +36,7 @@ public class FileServer {
                 OutputStream os = clientSocket.getOutputStream();
 
                 dos = new DataOutputStream(os);
-                dos.writeUTF("200 OK - Server connected");
+                dos.writeUTF("<AFTP/1.0 200 OK - Server connected");
                 dos.flush();
 
             } catch (Exception e) {
@@ -44,7 +44,7 @@ public class FileServer {
                 OutputStream os = clientSocket.getOutputStream();
 
                 dos = new DataOutputStream(os);
-                dos.writeUTF("500 Server Error");
+                dos.writeUTF("<AFTP/1.0 500 Server Error");
                 dos.flush();
             }
         }
