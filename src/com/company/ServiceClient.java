@@ -30,13 +30,14 @@ public class ServiceClient implements Runnable {
     public void run() {
         try {
 
-            defaultPath = "C:\\Users\\Fyza\\IdeaProjects\\AFTP_FileServer\\FileFolder\\";
+            defaultPath = "\\FileFolder\\";
 
             in = new BufferedReader(new InputStreamReader(
                     clientSocket.getInputStream()));
             String clientSelection;
+            //start reading client input
             while ((clientSelection = in.readLine()) != null) {
-                // Een switch die de input afhandelt
+                // A switch that handles input
                 String inputArray[] = clientSelection.split(" ", 3);
 
                 switch (inputArray[0]) {
@@ -55,6 +56,7 @@ public class ServiceClient implements Runnable {
 
                         continue;
                     default:
+                        //unknown command has been given
                         returnStatus("<AFTP/1.0 400 Bad request");
                         break;
                 }
@@ -72,22 +74,26 @@ public class ServiceClient implements Runnable {
 
             for (int i = 0; i < listOfFiles.length; i++) {
 
-                String file = null;
-                //set the line to te correct format (fileName UnixTimestamp data)
-                //listOfFiles[i].lastModified() / 1000L zorgt ervoor dat de unix timestamp het correcte formaat is.
-                file = listOfFiles[i].getName() + " " + (listOfFiles[i].lastModified() / 1000L)+ " " + readAllBytes(folder +"\\"+ listOfFiles[i].getName());
-                files.add(file);
+                String file;
+                //file = listOfFiles[i].getName() + " " + (listOfFiles[i].lastModified() / 1000L)+ " " + readAllBytes(folder +"\\"+ listOfFiles[i].getName());
+                String getName = listOfFiles[i].getName();
+                Long lastChanged = (listOfFiles[i].lastModified() / 1000L);
+                String readBytes = readAllBytes(folder +"\\"+ listOfFiles[i].getName());
+
+                String output = getName + " " + lastChanged;
+
+                files.add(output);
             }
 
             /////////////////////////////
             OutputStream os = clientSocket.getOutputStream();  //handle file send over socket
-            /*DataOutputStream*/
             dos = new DataOutputStream(os); //Sending file name and file size to the server
             dos.writeUTF("<AFTP/1.0 200 OK\r\n");
             dos.writeUTF("Content-Length: " + files.size() +"\r\n\r\n");
             for (String file : files ) {
                 dos.writeUTF(file+ "\r\n");
             }
+            //List can be writter and send but client cannot fully read it all (yet)
             dos.flush();
             dos.close();
         } catch (IOException ex) {
@@ -118,7 +124,6 @@ public class ServiceClient implements Runnable {
             }
 
             output.close();
-            //clientData.close();
 
             System.out.println("File "+fileName+" received from client.");
             returnStatus("<AFTP/1.0 200 OK");
@@ -137,7 +142,6 @@ public class ServiceClient implements Runnable {
                 returnStatus("<AFTP/1.0 500 Server Error");
             }
             output.close();
-            //clientData.close();
 
         }
     }
