@@ -18,7 +18,6 @@ public class ServiceClient implements Runnable {
 
     private Socket clientSocket;
     private BufferedReader in = null;
-    private String defaultPath;
 
     public ServiceClient(Socket client) {
         //bind connected client to socket.
@@ -30,8 +29,6 @@ public class ServiceClient implements Runnable {
     public void run() {
         try {
 
-            defaultPath = "\\FileFolder\\";
-
             in = new BufferedReader(new InputStreamReader(
                     clientSocket.getInputStream()));
             String clientSelection;
@@ -42,7 +39,7 @@ public class ServiceClient implements Runnable {
 
                 switch (inputArray[0]) {
                     case "LIST":
-                        listFiles();
+                        //listFiles();
                         continue;
                     case "PUT":
                         putFileOnServer();
@@ -64,42 +61,42 @@ public class ServiceClient implements Runnable {
         } catch (IOException ignored) {
         }
     }
-
-    private void listFiles() {
-        DataOutputStream dos = null;
-        ArrayList<String> files = new ArrayList<String>();
-        try {
-            File folder = new File(defaultPath);
-            File[] listOfFiles = folder.listFiles();
-
-            for (int i = 0; i < listOfFiles.length; i++) {
-
-                String file;
-                //file = listOfFiles[i].getName() + " " + (listOfFiles[i].lastModified() / 1000L)+ " " + readAllBytes(folder +"\\"+ listOfFiles[i].getName());
-                String getName = listOfFiles[i].getName();
-                Long lastChanged = (listOfFiles[i].lastModified() / 1000L);
-                String readBytes = readAllBytes(folder +"\\"+ listOfFiles[i].getName());
-
-                String output = getName + " " + lastChanged;
-
-                files.add(output);
-            }
-
-            /////////////////////////////
-            OutputStream os = clientSocket.getOutputStream();  //handle file send over socket
-            dos = new DataOutputStream(os); //Sending file name and file size to the server
-            dos.writeUTF("<AFTP/1.0 200 OK\r\n");
-            dos.writeUTF("Content-Length: " + files.size() +"\r\n\r\n");
-            for (String file : files ) {
-                dos.writeUTF(file+ "\r\n");
-            }
-            //List can be writter and send but client cannot fully read it all (yet)
-            dos.flush();
-            dos.close();
-        } catch (IOException ex) {
-            System.err.println("<AFTP/1.0 500 Server Error");
-        }
-    }
+//
+//    private void listFiles() {
+//        DataOutputStream dos = null;
+//        ArrayList<String> files = new ArrayList<String>();
+//        try {
+//            File folder = new File(defaultPath);
+//            File[] listOfFiles = folder.listFiles();
+//
+//            for (int i = 0; i < listOfFiles.length; i++) {
+//
+//                String file;
+//                //file = listOfFiles[i].getName() + " " + (listOfFiles[i].lastModified() / 1000L)+ " " + readAllBytes(folder +"\\"+ listOfFiles[i].getName());
+//                String getName = listOfFiles[i].getName();
+//                Long lastChanged = (listOfFiles[i].lastModified() / 1000L);
+//                String readBytes = readAllBytes(folder +"\\"+ listOfFiles[i].getName());
+//
+//                String output = getName + " " + lastChanged;
+//
+//                files.add(output);
+//            }
+//
+//            /////////////////////////////
+//            OutputStream os = clientSocket.getOutputStream();  //handle file send over socket
+//            dos = new DataOutputStream(os); //Sending file name and file size to the server
+//            dos.writeUTF("<AFTP/1.0 200 OK\r\n");
+//            dos.writeUTF("Content-Length: " + files.size() +"\r\n\r\n");
+//            for (String file : files ) {
+//                dos.writeUTF(file+ "\r\n");
+//            }
+//            //List can be writter and send but client cannot fully read it all (yet)
+//            dos.flush();
+//            dos.close();
+//        } catch (IOException ex) {
+//            System.err.println("<AFTP/1.0 500 Server Error");
+//        }
+//    }
     public void putFileOnServer() throws IOException {
 
         // 200 OK
@@ -114,7 +111,7 @@ public class ServiceClient implements Runnable {
             clientData = new DataInputStream(clientSocket.getInputStream());
 
             String fileName = clientData.readUTF();
-            filePath = defaultPath + fileName;
+            filePath = fileName;
             output = new FileOutputStream(filePath);
             long size = clientData.readLong();
             byte[] buffer = new byte[1024];
@@ -146,10 +143,10 @@ public class ServiceClient implements Runnable {
         }
     }
 
-    public void getFileFromServer(String fileName)  {
+    public void getFileFromServer(String fileName) throws IOException {
         String FilePathName;
 
-        FilePathName = defaultPath + fileName;
+        FilePathName = fileName;
         try {
             File myFile = new File(FilePathName);  //handle file reading
             byte[] mybytearray = new byte[(int) myFile.length()];
@@ -165,22 +162,22 @@ public class ServiceClient implements Runnable {
             DataOutputStream dos = new DataOutputStream(os);
 
             dos.writeUTF("<AFTP/1.0 200 OK");
-            dos.writeUTF(myFile.getName());
             dos.writeLong(mybytearray.length);
             dos.write(mybytearray, 0, mybytearray.length);
             dos.flush();
+            dos.close();
             System.out.println("File "+fileName+" sent to client.");
 
         } catch (Exception e) {
             System.err.println("File does not exist!");
-            //returnStatus("404 Not found");
+            returnStatus("<AFTP/1.0 404 Not found");
 
         }
     }
 
     private void deleteFile(String fileName) throws IOException {
 
-        String fullPath = defaultPath + fileName;
+        String fullPath = fileName;
         File file = new File(fullPath);
 
         File checkFolder = new File(fullPath);
