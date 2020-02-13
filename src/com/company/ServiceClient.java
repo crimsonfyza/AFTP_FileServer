@@ -5,7 +5,7 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-
+import java.util.List;
 
 
 public class ServiceClient implements Runnable {
@@ -64,40 +64,49 @@ public class ServiceClient implements Runnable {
     }
 
     private void listFiles() {
-        DataOutputStream dos = null;
-        ArrayList<String> files = new ArrayList<String>();
-        try {
-            File folder = new File(Share);
-            File[] listOfFiles = folder.listFiles();
 
-            for (int i = 0; i < listOfFiles.length; i++) {
 
-                String file;
-                //file = listOfFiles[i].getName() + " " + (listOfFiles[i].lastModified() / 1000L)+ " " + readAllBytes(folder +"\\"+ listOfFiles[i].getName());
-                String getName = listOfFiles[i].getName();
-                Long lastChanged = (listOfFiles[i].lastModified() / 1000L);
-                String readBytes = readAllBytes(folder +"\\"+ listOfFiles[i].getName());
+        ListAll(Share);
 
-                String output = getName + " " + lastChanged;
+//        File folder = new File(Share);
+//        File[] listOfFiles = folder.listFiles();
+//
+//        for (int i = 0; i < listOfFiles.length; i++) {
+//
+//            File[] currentFile = listOfFiles[i].listFiles();
+//            //file = listOfFiles[i].getName() + " " + (listOfFiles[i].lastModified() / 1000L)+ " " + readAllBytes(folder +"\\"+ listOfFiles[i].getName());
+//            String getName = listOfFiles[i].getName();
+//
+//            Long lastChanged = (listOfFiles[i].lastModified() / 1000L);
+//            String output = getName + " " + lastChanged;
+//
+//            //files.add(output);
+//        }
 
-                files.add(output);
-            }
-
-            /////////////////////////////
-            OutputStream os = clientSocket.getOutputStream();  //handle file send over socket
-            dos = new DataOutputStream(os); //Sending file name and file size to the server
-            dos.writeUTF("<AFTP/1.0 200 OK\r\n");
-            dos.writeUTF("Content-Length: " + files.size() +"\r\n\r\n");
-            for (String file : files ) {
-                dos.writeUTF(file+ "\r\n");
-            }
-            //List can be writter and send but client cannot fully read it all (yet)
-            dos.flush();
-            dos.close();
-        } catch (IOException ex) {
-            System.err.println("<AFTP/1.0 500 Server Error");
-        }
     }
+
+    public void ListAll (String input){
+
+        File folder = new File(input);
+        File[] listOfFiles = folder.listFiles();
+
+        for (int i = 0; i < listOfFiles.length; i++) {
+
+            File[] currentFile = listOfFiles[i].listFiles();
+
+            for (int o = 0; o < currentFile.length; o++) {
+
+                if (currentFile[o].listFiles() != null) {
+                  System.out.println(currentFile[o].getName());
+                }
+
+            }
+
+
+        }
+
+    }
+
     public void putFileOnServer() throws IOException {
 
         // 200 OK
