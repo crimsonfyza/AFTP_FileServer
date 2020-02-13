@@ -18,6 +18,7 @@ public class ServiceClient implements Runnable {
 
     private Socket clientSocket;
     private BufferedReader in = null;
+    private String Share;
 
     public ServiceClient(Socket client) {
         //bind connected client to socket.
@@ -28,7 +29,7 @@ public class ServiceClient implements Runnable {
     @Override
     public void run() {
         try {
-
+            Share = "Share\\";
             in = new BufferedReader(new InputStreamReader(
                     clientSocket.getInputStream()));
             String clientSelection;
@@ -111,7 +112,7 @@ public class ServiceClient implements Runnable {
             clientData = new DataInputStream(clientSocket.getInputStream());
 
             String fileName = clientData.readUTF();
-            filePath = fileName;
+            filePath = Share +fileName;
             output = new FileOutputStream(filePath);
             long size = clientData.readLong();
             byte[] buffer = new byte[1024];
@@ -146,7 +147,7 @@ public class ServiceClient implements Runnable {
     public void getFileFromServer(String fileName) throws IOException {
         String FilePathName;
 
-        FilePathName = fileName;
+        FilePathName = Share +fileName;
         try {
             File myFile = new File(FilePathName);  //handle file reading
             byte[] mybytearray = new byte[(int) myFile.length()];
@@ -162,9 +163,9 @@ public class ServiceClient implements Runnable {
             DataOutputStream dos = new DataOutputStream(os);
 
             dos.writeUTF("<AFTP/1.0 200 OK");
-            dos.writeLong(mybytearray.length);
             dos.write(mybytearray, 0, mybytearray.length);
             dos.flush();
+            dis.close();
             dos.close();
             System.out.println("File "+fileName+" sent to client.");
 
@@ -177,7 +178,7 @@ public class ServiceClient implements Runnable {
 
     private void deleteFile(String fileName) throws IOException {
 
-        String fullPath = fileName;
+        String fullPath = Share+fileName;
         File file = new File(fullPath);
 
         File checkFolder = new File(fullPath);
