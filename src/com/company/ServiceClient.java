@@ -40,7 +40,7 @@ public class ServiceClient implements Runnable {
 
                 switch (inputArray[0]) {
                     case "LIST":
-                        //listFiles();
+                        listFiles();
                         continue;
                     case "PUT":
                         putFileOnServer();
@@ -62,42 +62,42 @@ public class ServiceClient implements Runnable {
         } catch (IOException ignored) {
         }
     }
-    //
-//    private void listFiles() {
-//        DataOutputStream dos = null;
-//        ArrayList<String> files = new ArrayList<String>();
-//        try {
-//            File folder = new File(defaultPath);
-//            File[] listOfFiles = folder.listFiles();
-//
-//            for (int i = 0; i < listOfFiles.length; i++) {
-//
-//                String file;
-//                //file = listOfFiles[i].getName() + " " + (listOfFiles[i].lastModified() / 1000L)+ " " + readAllBytes(folder +"\\"+ listOfFiles[i].getName());
-//                String getName = listOfFiles[i].getName();
-//                Long lastChanged = (listOfFiles[i].lastModified() / 1000L);
-//                String readBytes = readAllBytes(folder +"\\"+ listOfFiles[i].getName());
-//
-//                String output = getName + " " + lastChanged;
-//
-//                files.add(output);
-//            }
-//
-//            /////////////////////////////
-//            OutputStream os = clientSocket.getOutputStream();  //handle file send over socket
-//            dos = new DataOutputStream(os); //Sending file name and file size to the server
-//            dos.writeUTF("<AFTP/1.0 200 OK\r\n");
-//            dos.writeUTF("Content-Length: " + files.size() +"\r\n\r\n");
-//            for (String file : files ) {
-//                dos.writeUTF(file+ "\r\n");
-//            }
-//            //List can be writter and send but client cannot fully read it all (yet)
-//            dos.flush();
-//            dos.close();
-//        } catch (IOException ex) {
-//            System.err.println("<AFTP/1.0 500 Server Error");
-//        }
-//    }
+
+    private void listFiles() {
+        DataOutputStream dos = null;
+        ArrayList<String> files = new ArrayList<String>();
+        try {
+            File folder = new File(Share);
+            File[] listOfFiles = folder.listFiles();
+
+            for (int i = 0; i < listOfFiles.length; i++) {
+
+                String file;
+                //file = listOfFiles[i].getName() + " " + (listOfFiles[i].lastModified() / 1000L)+ " " + readAllBytes(folder +"\\"+ listOfFiles[i].getName());
+                String getName = listOfFiles[i].getName();
+                Long lastChanged = (listOfFiles[i].lastModified() / 1000L);
+                String readBytes = readAllBytes(folder +"\\"+ listOfFiles[i].getName());
+
+                String output = getName + " " + lastChanged;
+
+                files.add(output);
+            }
+
+            /////////////////////////////
+            OutputStream os = clientSocket.getOutputStream();  //handle file send over socket
+            dos = new DataOutputStream(os); //Sending file name and file size to the server
+            dos.writeUTF("<AFTP/1.0 200 OK\r\n");
+            dos.writeUTF("Content-Length: " + files.size() +"\r\n\r\n");
+            for (String file : files ) {
+                dos.writeUTF(file+ "\r\n");
+            }
+            //List can be writter and send but client cannot fully read it all (yet)
+            dos.flush();
+            dos.close();
+        } catch (IOException ex) {
+            System.err.println("<AFTP/1.0 500 Server Error");
+        }
+    }
     public void putFileOnServer() throws IOException {
 
         // 200 OK
