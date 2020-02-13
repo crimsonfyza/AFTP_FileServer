@@ -11,10 +11,10 @@ import java.util.ArrayList;
 public class ServiceClient implements Runnable {
 
     /**
-    * @param clientSocket   De connectie met de server over een specifieke poort
-    * @param in       Buffer om de inputstream heen, haalt input uit de commandline
-    * @param defaultPath default location where files are for commands: GET,PUT,DELETE,LIST
-    **/
+     * @param clientSocket   De connectie met de server over een specifieke poort
+     * @param in       Buffer om de inputstream heen, haalt input uit de commandline
+     * @param defaultPath default location where files are for commands: GET,PUT,DELETE,LIST
+     **/
 
     private Socket clientSocket;
     private BufferedReader in = null;
@@ -61,7 +61,7 @@ public class ServiceClient implements Runnable {
         } catch (IOException ignored) {
         }
     }
-//
+    //
 //    private void listFiles() {
 //        DataOutputStream dos = null;
 //        ArrayList<String> files = new ArrayList<String>();
