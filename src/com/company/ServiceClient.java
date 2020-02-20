@@ -4,12 +4,9 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 
 
 public class ServiceClient implements Runnable {
-
     /**
      * @param clientSocket   De connectie met de server over een specifieke poort
      * @param in       Buffer om de inputstream heen, haalt input uit de commandline
@@ -25,13 +22,11 @@ public class ServiceClient implements Runnable {
         this.clientSocket = client;
     }
 
-
     @Override
     public void run() {
         try {
             Share = "Share\\";
-            in = new BufferedReader(new InputStreamReader(
-                    clientSocket.getInputStream()));
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             String clientSelection;
             //start reading client input
             while ((clientSelection = in.readLine()) != null) {
@@ -60,12 +55,11 @@ public class ServiceClient implements Runnable {
                 }
             }
         } catch (IOException ignored) {
+
         }
     }
 
     private void listFiles() {
-
-
         ListAll(Share);
 
 //        File folder = new File(Share);
@@ -82,12 +76,10 @@ public class ServiceClient implements Runnable {
 //
 //            //files.add(output);
 //        }
-
     }
 
-    public void ListAll (String input){
-
-        File folder = new File(input);
+    public void ListAll (String path){
+        File folder = new File(path);
         File[] listOfFiles = folder.listFiles();
 
         for (int i = 0; i < listOfFiles.length; i++) {
@@ -97,18 +89,13 @@ public class ServiceClient implements Runnable {
             for (int o = 0; o < currentFile.length; o++) {
 
                 if (currentFile[o].listFiles() != null) {
-                  System.out.println(currentFile[o].getName());
+                    System.out.println(currentFile[o].getName());
                 }
-
             }
-
-
         }
-
     }
 
     public void putFileOnServer() throws IOException {
-
         // 200 OK
         // 423 Locked
         String filePath = null;
@@ -149,7 +136,6 @@ public class ServiceClient implements Runnable {
                 returnStatus("<AFTP/1.0 500 Server Error");
             }
             output.close();
-
         }
     }
 
@@ -181,12 +167,10 @@ public class ServiceClient implements Runnable {
         } catch (Exception e) {
             System.err.println("File does not exist!");
             returnStatus("<AFTP/1.0 404 Not found");
-
         }
     }
 
     private void deleteFile(String fileName) throws IOException {
-
         String fullPath = Share+fileName;
         File file = new File(fullPath);
 
@@ -204,18 +188,14 @@ public class ServiceClient implements Runnable {
         } else {
             returnStatus("<AFTP/1.0 404 Not found");
         }
-
     }
 
-    private static String readAllBytes(String filePath)
-    {
+    private static String readAllBytes(String filePath) {
         String content = "";
-        try
-        {
+        try {
             content = new String ( Files.readAllBytes( Paths.get(filePath) ) );
         }
-        catch (IOException e)
-        {
+        catch (IOException e) {
             e.printStackTrace();
         }
         return content;
