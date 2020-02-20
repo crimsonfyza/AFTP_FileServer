@@ -1,9 +1,13 @@
 package com.company;
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 
 public class ServiceClient implements Runnable {
@@ -16,6 +20,8 @@ public class ServiceClient implements Runnable {
     private Socket clientSocket;
     private BufferedReader in = null;
     private String Share;
+    private String ShareName;
+    private ArrayList<String> ListFiles;
 
     public ServiceClient(Socket client) {
         //bind connected client to socket.
@@ -26,6 +32,7 @@ public class ServiceClient implements Runnable {
     public void run() {
         try {
             Share = "Share\\";
+            ShareName = "Share";
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             String clientSelection;
             //start reading client input
@@ -59,38 +66,51 @@ public class ServiceClient implements Runnable {
         }
     }
 
-    private void listFiles() {
-        ListAll(Share);
+    private void listFiles() throws IOException {
+        ListFiles = new ArrayList<>();
+        folderWalker(Share);
 
-//        File folder = new File(Share);
-//        File[] listOfFiles = folder.listFiles();
-//
-//        for (int i = 0; i < listOfFiles.length; i++) {
-//
-//            File[] currentFile = listOfFiles[i].listFiles();
-//            //file = listOfFiles[i].getName() + " " + (listOfFiles[i].lastModified() / 1000L)+ " " + readAllBytes(folder +"\\"+ listOfFiles[i].getName());
-//            String getName = listOfFiles[i].getName();
-//
-//            Long lastChanged = (listOfFiles[i].lastModified() / 1000L);
-//            String output = getName + " " + lastChanged;
-//
-//            //files.add(output);
-//        }
+        //creating outputstream for return value
+        OutputStream os = clientSocket.getOutputStream();
+        DataOutputStream dos = new DataOutputStream(os);
+
+
+        ArrayList<String> UTF = new ArrayList<>();
+        UTF.add("<AFTP/1.0 200 OK");
+
+        for (String path : ListFiles) {
+
+            File tempFile = new File(path);
+
+            String currentName = path;
+            long currentDate = tempFile.lastModified();
+            UTF.add(currentName + " "+ currentDate);
+
+        }
+
+        dos.writeUTF(UTF.toString());
+
+        dos.flush();
+        dos.close();
+
     }
 
-    public void ListAll (String path){
-        File folder = new File(path);
-        File[] listOfFiles = folder.listFiles();
+    public void folderWalker( String path ) {
 
-        for (int i = 0; i < listOfFiles.length; i++) {
+        File root = new File( path );
+        File[] list = root.listFiles();
 
-            File[] currentFile = listOfFiles[i].listFiles();
+        if (list == null) return;
 
-            for (int o = 0; o < currentFile.length; o++) {
-
-                if (currentFile[o].listFiles() != null) {
-                    System.out.println(currentFile[o].getName());
-                }
+        for ( File f : list ) {
+            if ( f.isDirectory() ) {
+                //get all folders
+                folderWalker( f.getAbsolutePath());
+            }
+            else {
+                String[] editPathName = f.getAbsolutePath().split(ShareName);
+                String outValue = ShareName + editPathName[1];
+                ListFiles.add(outValue);
             }
         }
     }
