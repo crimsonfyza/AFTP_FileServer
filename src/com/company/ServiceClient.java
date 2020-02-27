@@ -90,9 +90,6 @@ public class ServiceClient implements Runnable {
 
         dos.writeUTF(UTF.toString());
 
-        dos.flush();
-        dos.close();
-
     }
 
     public void folderWalker( String path ) {
@@ -159,36 +156,41 @@ public class ServiceClient implements Runnable {
         }
     }
 
-    public void getFileFromServer(String fileName) throws IOException {
-        String FilePathName;
 
-        FilePathName = Share +fileName;
+    public void getFileFromServer(String putFileName) {
+
+        String fullPath = "Share\\" + putFileName;
+
         try {
-            File myFile = new File(FilePathName);  //handle file reading
-            byte[] mybytearray = new byte[(int) myFile.length()];
-
-            FileInputStream fis = new FileInputStream(myFile);
-            BufferedInputStream bis = new BufferedInputStream(fis);
-
-            DataInputStream dis = new DataInputStream(bis);
-            dis.readFully(mybytearray, 0, mybytearray.length);
-
-            //creating outputstream for return value
             OutputStream os = clientSocket.getOutputStream();
             DataOutputStream dos = new DataOutputStream(os);
 
-            dos.writeUTF("<AFTP/1.0 200 OK");
-            dos.write(mybytearray, 0, mybytearray.length);
-            dos.flush();
-            dis.close();
-            dos.close();
-            System.out.println("File "+fileName+" sent to client.");
+            File myFile = new File(fullPath);
 
+            if(!(myFile.exists())) {
+                dos.writeUTF("<AFTP/1.0 404 Not found");
+                dos.flush();
+            } else {
+                byte[] byteArray = new byte[(int) myFile.length()];
+
+                FileInputStream fis = new FileInputStream(myFile);
+                BufferedInputStream bis = new BufferedInputStream(fis);
+                DataInputStream dis = new DataInputStream(bis);
+                dis.readFully(byteArray, 0, byteArray.length);
+
+                dos.writeUTF("<AFTP/1.0 200 OK");
+                dos.writeLong(byteArray.length);
+                dos.write(byteArray, 0, byteArray.length);
+                dos.flush();
+
+            }
         } catch (Exception e) {
-            System.err.println("File does not exist!");
-            returnStatus("<AFTP/1.0 404 Not found");
+            System.err.println("Exception: " + e);
         }
+
     }
+
+
 
     private void deleteFile(String fileName) throws IOException {
         String fullPath = Share+fileName;
