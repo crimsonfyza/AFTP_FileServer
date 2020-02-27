@@ -42,6 +42,7 @@ public class ServiceClient implements Runnable {
 
                 switch (inputArray[0]) {
                     case "LIST":
+                    case "SYNCH":
                         listFiles();
                         continue;
                     case "PUT":
@@ -102,7 +103,12 @@ public class ServiceClient implements Runnable {
         for ( File f : list ) {
             if ( f.isDirectory() ) {
                 //get all folders
+                String[] editPathName = f.getAbsolutePath().split(ShareName);
+                String outValue = ShareName + editPathName[1];
+                ListFiles.add(outValue);
+
                 folderWalker( f.getAbsolutePath());
+
             }
             else {
                 String[] editPathName = f.getAbsolutePath().split(ShareName);
