@@ -3,6 +3,8 @@ package com.company;
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.sql.Timestamp;
+import java.util.Date;
 
 
 public class ServiceClient implements Runnable {
@@ -11,6 +13,7 @@ public class ServiceClient implements Runnable {
     private String share;
     private String shareName;
     private ArrayList<String> listFiles;
+    private String invokedCommand;
 
     /**
      * Binds the connecting client to a socket
@@ -37,6 +40,7 @@ public class ServiceClient implements Runnable {
             while ((clientSelection = in.readLine()) != null) {
                 // A switch that handles input
                 String inputArray[] = clientSelection.split(" ", 3);
+                invokedCommand = clientSelection;
 
                 switch (inputArray[0]) {
                     case "LIST":
@@ -59,6 +63,7 @@ public class ServiceClient implements Runnable {
                     default:
                         // In case an unknown command is given, a 400 response is given
                         returnStatus("<AFTP/1.0 400 Bad request");
+                        createLogRow("<AFTP/1.0 400 Bad request");
                         break;
                 }
             }
@@ -81,6 +86,7 @@ public class ServiceClient implements Runnable {
 
         ArrayList<String> UTF = new ArrayList<>();
         UTF.add("<AFTP/1.0 200 OK");
+        createLogRow("<AFTP/1.0 200 OK");
 
         for (String path : listFiles) {
             File tempFile = new File(path);
@@ -154,8 +160,8 @@ public class ServiceClient implements Runnable {
 
             output.close();
 
-            System.out.println("File "+fileName+" received from client.");
             returnStatus("<AFTP/1.0 200 OK");
+            createLogRow("<AFTP/1.0 200 OK");
 
         } catch (IOException ex) {
             System.err.println("Client error. Connection closed.");
@@ -166,8 +172,10 @@ public class ServiceClient implements Runnable {
             // If the file existed, it would be locked, if it didn't exist there's a server error.
             if (defaultPathCheck == true) {
                 returnStatus("<AFTP/1.0 423 Locked");
+                createLogRow("<AFTP/1.0 423 Locked");
             } else {
                 returnStatus("<AFTP/1.0 500 Server Error");
+                createLogRow("<AFTP/1.0 500 Server Error");
             }
             output.close();
         }
@@ -191,6 +199,7 @@ public class ServiceClient implements Runnable {
             if(!(myFile.exists())) {
                 // In case the file doesn't exist a 404 response is printed
                 dos.writeUTF("<AFTP/1.0 404 Not found");
+                createLogRow("<AFTP/1.0 404 Not found");
                 dos.flush();
             } else {
                 byte[] byteArray = new byte[(int) myFile.length()];
@@ -201,6 +210,7 @@ public class ServiceClient implements Runnable {
                 dis.readFully(byteArray, 0, byteArray.length);
 
                 dos.writeUTF("<AFTP/1.0 200 OK");
+                createLogRow("<AFTP/1.0 200 OK");
                 dos.writeLong(byteArray.length);
                 dos.write(byteArray, 0, byteArray.length);
                 dos.flush();
@@ -228,12 +238,15 @@ public class ServiceClient implements Runnable {
             if (file.delete()) {
                 // If a file is successfully deleted a 200 response is returned to the client
                 returnStatus("<AFTP/1.0 200 OK");
+                createLogRow("<AFTP/1.0 200 OK");
             } else {
                 // If a file is in use a 423 response is returned to the client
                 returnStatus("<AFTP/1.0 423 Locked");
+                createLogRow("<AFTP/1.0 423 Locked");
             }
         } else {
             returnStatus("<AFTP/1.0 404 Not found");
+            createLogRow("<AFTP/1.0 404 Not found");
         }
     }
 
@@ -250,5 +263,32 @@ public class ServiceClient implements Runnable {
         dos = new DataOutputStream(os);
         dos.writeUTF(status);
         dos.flush();
+    }
+
+    private String createTimestamp () {
+        Date date = new Date();
+        Timestamp ts=new Timestamp(date.getTime());
+        return ts.toString();
+    }
+
+    private String getClientIP () {
+        return clientSocket.getRemoteSocketAddress().toString();
+    }
+
+    private void createLogRow (String status) throws IOException {
+        String timeStamp = createTimestamp();
+        String clientIP = getClientIP();
+        String logRow = timeStamp + " || " + clientIP + " || " + invokedCommand + " || " + status;
+        usingBufferedWritter(logRow);
+    }
+
+    public static void usingBufferedWritter(String addLog) throws IOException
+    {
+        BufferedWriter writer = new BufferedWriter(
+                new FileWriter("logfile.txt", true)  //Set true for append mode
+        );
+        writer.newLine();   //Add new line
+        writer.write(addLog);
+        writer.close();
     }
 }
