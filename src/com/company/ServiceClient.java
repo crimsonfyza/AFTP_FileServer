@@ -1,41 +1,39 @@
 package com.company;
 
 import java.io.*;
-import java.lang.reflect.Array;
 import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
 
 public class ServiceClient implements Runnable {
-    /**
-     * @param clientSocket   De connectie met de server over een specifieke poort
-     * @param in       Buffer om de inputstream heen, haalt input uit de commandline
-     * @param defaultPath default location where files are for commands: GET,PUT,DELETE,LIST
-     **/
-
     private Socket clientSocket;
     private BufferedReader in = null;
-    private String Share;
-    private String ShareName;
-    private ArrayList<String> ListFiles;
+    private String share;
+    private String shareName;
+    private ArrayList<String> listFiles;
 
-    public ServiceClient(Socket client) {
-        //bind connected client to socket.
+    /**
+     * Binds the connecting client to a socket
+     *
+     * @param client The client's socket
+     **/
+    public ServiceClient( Socket client ) {
         this.clientSocket = client;
     }
 
+
+    /**
+     * This method keeps the program running using a while loop and decides what method to call, depending on the user input.
+     **/
     @Override
     public void run() {
         try {
-            Share = "Share\\";
-            ShareName = "Share";
+            share = "Share\\";
+            shareName = "Share";
+
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             String clientSelection;
-            //start reading client input
+            // start reading client input
             while ((clientSelection = in.readLine()) != null) {
                 // A switch that handles input
                 String inputArray[] = clientSelection.split(" ", 3);
@@ -45,19 +43,21 @@ public class ServiceClient implements Runnable {
                     case "SYNCH":
                         listFiles();
                         continue;
+
                     case "PUT":
                         putFileOnServer();
                         continue;
+
                     case "GET":
                         getFileFromServer(inputArray[1]);
                         continue;
+
                     case "DELETE":
-
                         deleteFile(inputArray[1]);
-
                         continue;
+
                     default:
-                        //unknown command has been given
+                        // In case an unknown command is given, a 400 response is given
                         returnStatus("<AFTP/1.0 400 Bad request");
                         break;
                 }
@@ -67,34 +67,40 @@ public class ServiceClient implements Runnable {
         }
     }
 
-    private void listFiles() throws IOException {
-        ListFiles = new ArrayList<>();
-        folderWalker(Share);
 
-        //creating outputstream for return value
+    /**
+     * The function associated with the LIST command, which sends a list with all the files on the server to the client.
+     **/
+    private void listFiles() throws IOException {
+        listFiles = new ArrayList<>();
+        folderWalker(share);
+
+        // Creating output stream for return value
         OutputStream os = clientSocket.getOutputStream();
         DataOutputStream dos = new DataOutputStream(os);
-
 
         ArrayList<String> UTF = new ArrayList<>();
         UTF.add("<AFTP/1.0 200 OK");
 
-        for (String path : ListFiles) {
-
+        for (String path : listFiles) {
             File tempFile = new File(path);
 
             String currentName = path;
             long currentDate = tempFile.lastModified();
             UTF.add(currentName + " "+ currentDate);
-
         }
 
         dos.writeUTF(UTF.toString());
-
     }
 
-    public void folderWalker( String path ) {
 
+    /**
+     * Walks through all subfolders on the client, depending on the given path.
+     * This function is used in the LIST command.
+     *
+     * @param path The path which is being checked
+     **/
+    public void folderWalker( String path ) {
         File root = new File( path );
         File[] list = root.listFiles();
 
@@ -102,25 +108,27 @@ public class ServiceClient implements Runnable {
 
         for ( File f : list ) {
             if ( f.isDirectory() ) {
-                //get all folders
-                String[] editPathName = f.getAbsolutePath().split(ShareName);
-                String outValue = ShareName + editPathName[1];
-                ListFiles.add(outValue);
+                // Get all folders
+                String[] editPathName = f.getAbsolutePath().split(shareName);
+                String outValue = shareName + editPathName[1];
+                listFiles.add(outValue);
 
                 folderWalker( f.getAbsolutePath());
 
             }
             else {
-                String[] editPathName = f.getAbsolutePath().split(ShareName);
-                String outValue = ShareName + editPathName[1];
-                ListFiles.add(outValue);
+                String[] editPathName = f.getAbsolutePath().split(shareName);
+                String outValue = shareName + editPathName[1];
+                listFiles.add(outValue);
             }
         }
     }
 
+
+    /**
+     * The function associated with the PUT command, which puts a file on the server.
+     **/
     public void putFileOnServer() throws IOException {
-        // 200 OK
-        // 423 Locked
         String filePath = null;
         OutputStream output = null;
         DataInputStream clientData = null;
@@ -131,10 +139,14 @@ public class ServiceClient implements Runnable {
             clientData = new DataInputStream(clientSocket.getInputStream());
 
             String fileName = clientData.readUTF();
-            filePath = Share +fileName;
+            filePath = share + fileName;
             output = new FileOutputStream(filePath);
             long size = clientData.readLong();
             byte[] buffer = new byte[1024];
+
+            // For every iteration, a part of 1024 bytes is received through the file output stream
+            // The progress is checked through the long "size", this long is initially the size of the file and in every loop
+            // the part that is received is substracted from the long, thus keeping track of the progress
             while (size > 0 && (bytesRead = clientData.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
                 output.write(buffer, 0, bytesRead);
                 size -= bytesRead;
@@ -149,13 +161,12 @@ public class ServiceClient implements Runnable {
             System.err.println("Client error. Connection closed.");
             File filePathCheck = new File(filePath);
             Boolean defaultPathCheck = filePathCheck.exists();
-            //error file couldnt upload
-            // so if the file existed, it would be locked, if it didnt exist theres a server error.
+
+            // Error: file couldn't upload
+            // If the file existed, it would be locked, if it didn't exist there's a server error.
             if (defaultPathCheck == true) {
-                //overwrite failed
                 returnStatus("<AFTP/1.0 423 Locked");
             } else {
-                //new file couldnt be made.
                 returnStatus("<AFTP/1.0 500 Server Error");
             }
             output.close();
@@ -163,9 +174,13 @@ public class ServiceClient implements Runnable {
     }
 
 
-    public void getFileFromServer(String putFileName) {
-
-        String fullPath = "Share\\" + putFileName;
+    /**
+     * The function associated with the GET command, which sends a file to the client.
+     *
+     * @param fileName The name of the file which is going to be sent to the client
+     **/
+    public void getFileFromServer( String fileName ) {
+        String fullPath = "Share\\" + fileName;
 
         try {
             OutputStream os = clientSocket.getOutputStream();
@@ -174,6 +189,7 @@ public class ServiceClient implements Runnable {
             File myFile = new File(fullPath);
 
             if(!(myFile.exists())) {
+                // In case the file doesn't exist a 404 response is printed
                 dos.writeUTF("<AFTP/1.0 404 Not found");
                 dos.flush();
             } else {
@@ -188,29 +204,32 @@ public class ServiceClient implements Runnable {
                 dos.writeLong(byteArray.length);
                 dos.write(byteArray, 0, byteArray.length);
                 dos.flush();
-
             }
         } catch (Exception e) {
             System.err.println("Exception: " + e);
         }
-
     }
 
 
-
-    private void deleteFile(String fileName) throws IOException {
-        String fullPath = Share+fileName;
+    /**
+     * The function associated with the DELETE command, which deletes a file on the server.
+     *
+     * @param fileName The name of the file which is going to be deleted
+     **/
+    private void deleteFile( String fileName ) throws IOException {
+        String fullPath = share + fileName;
         File file = new File(fullPath);
 
         File checkFolder = new File(fullPath);
         Boolean resultCheckFolder = checkFolder.exists();
-        //if folder doesnt exist throw
+
+        // First a check if the folder exists, if it doesn't exist a 404 response is returned to the client
         if (resultCheckFolder == true) {
-            //Run delete function and check if it worked.
             if (file.delete()) {
+                // If a file is successfully deleted a 200 response is returned to the client
                 returnStatus("<AFTP/1.0 200 OK");
             } else {
-                //if file is in use send 423
+                // If a file is in use a 423 response is returned to the client
                 returnStatus("<AFTP/1.0 423 Locked");
             }
         } else {
@@ -218,18 +237,13 @@ public class ServiceClient implements Runnable {
         }
     }
 
-    private static String readAllBytes(String filePath) {
-        String content = "";
-        try {
-            content = new String ( Files.readAllBytes( Paths.get(filePath) ) );
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-        return content;
-    }
 
-    private void returnStatus (String status) throws IOException {
+    /**
+     * Sends a repsonse to the client
+     *
+     * @param status The response that is being send to the client
+     **/
+    private void returnStatus( String status ) throws IOException {
         DataOutputStream dos = null;
         OutputStream os = clientSocket.getOutputStream();
 
@@ -237,5 +251,4 @@ public class ServiceClient implements Runnable {
         dos.writeUTF(status);
         dos.flush();
     }
-
 }
