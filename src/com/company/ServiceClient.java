@@ -278,7 +278,9 @@ public class ServiceClient implements Runnable {
     private void createLogRow (String status) throws IOException {
         String timeStamp = createTimestamp();
         String clientIP = getClientIP();
+
         String logRow = timeStamp + " || " + clientIP + " || " + invokedCommand + " || " + status;
+        System.out.println(logRow);
         usingBufferedWritter(logRow);
     }
 
