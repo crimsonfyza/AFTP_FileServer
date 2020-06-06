@@ -31,7 +31,7 @@ this row is logged in the logfile.txt this file if not exist will automatically 
 We at filedevelopers@avans.nl use the "Task scheduler" tool from Microsoft, to run a Powershell check on the logfile.txt, if errors are found it will automatically mail them to filedevelopers@avans.nl for our automated security logging.
 The source for the powershell file is in: powershell_script.
 It will look like this: 
-![](screenshots/logging.PNG)
+![](screenshots/powershell.PNG)
 
 # Contribute 
 Other developers can give us feedback at filedevelopers@avans.nl
