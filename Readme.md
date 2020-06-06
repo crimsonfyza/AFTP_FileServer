@@ -1,6 +1,6 @@
 # Introduction  
 This is a CLI operated file server. Once installed and run, 
-with this server you will have a public location where other users can PUSH - GET - DELETE - UPDATE their files to, 
+with this server you will have a public location where other users can PUSH - GET - DELETE - LIST - SYNCH their files to, 
 using 1 or more FileClients connecting to the FileServer using CLI commands.   
 
 # Installation
