@@ -21,5 +21,8 @@ to connect users you need to use the other application.
 connect the users to the fileservers IP or if on the same computer localhost, if they connect succesfully the fileserver shows the following message for each user that is connected: 
 ![](screenshots/connectedUsers.png) 
 
+# Security
+![](screenshots/logging.png) 
+
 # Contribute 
 Other developers can give us feedback at filedevelopers@avans.nl
