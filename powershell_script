@@ -1,0 +1,58 @@
+#Mailing Options
+Function SendMail
+{
+    [cmdletbinding()]
+    PARAM ($Attachments,$To, $Loginformation)
+
+    $SMTP = "" #Enter company SMTP or OPEN SMTP adres
+    $From = "filedevelopers@avans.nl" #ENTER FROM E-mail address
+    $SubjectHeader = "Header" #Enter header information
+
+    $Body =  "Dear Reader,`n"
+    $Body += "`n"
+    $Body += "Log file information:`n"
+
+    $Body += $Loginformation
+
+    $Body += "`n"
+    $Body += "Kind Regards,`n"
+    $Body += "filedevelopers@avans.nl`n"
+
+    Send-MailMessage -From $From -Subject $SubjectHeader -To $To -Body $Body -SmtpServer $SMTP -Attachments $Attachments
+
+}
+
+
+
+#logfile location
+$logfile = "root\logfile.txt"
+$Log = get-content $logfile
+
+$newBody = ""
+
+#loop through found log
+foreach ($logRow in $Log) {
+
+    $currentLogRow = $logRow.Split("||")
+
+    $Timestamp = $currentLogRow[0]
+    $Socket = $currentLogRow[2]
+    $Input = $currentLogRow[4]
+    $Response = $currentLogRow[6]
+
+    #If Error / Locked response, mailfile will be setup
+    if (($Response -like "*Locked*") -or ($Response -like "*Error*")) {
+
+        $newBody += $Timestamp + " - "+ $Socket + " - " + $Input + " - " + $Response +  " `n"
+
+
+    }
+
+}
+
+#this is for logging purpose (it will output the errors / locked found)
+echo $newBody
+
+#Use function Above
+#attachment empty = none
+SendMail -To "filedevelopers@avans.nl" -Attachments "" -Loginformation $newBody

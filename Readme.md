@@ -22,7 +22,16 @@ connect the users to the fileservers IP or if on the same computer localhost, if
 ![](screenshots/connectedUsers.png)
 
 # Security
-![server](screenshots/logging.PNG)
+Every action that a FileClient does is logged in a single row with "Timestamp || socketconnection || input || response". 
+this row is logged in the logfile.txt this file if not exist will automatically be created. it will not be empty'd on first run, it will only update.
+
+![](screenshots/logging.PNG)
+
+
+We at filedevelopers@avans.nl use the "Task scheduler" tool from Microsoft, to run a Powershell check on the logfile.txt, if errors are found it will automatically mail them to filedevelopers@avans.nl for our automated security logging.
+The source for the powershell file is in: powershell_script.
+It will look like this: 
+![](screenshots/logging.PNG)
 
 # Contribute 
 Other developers can give us feedback at filedevelopers@avans.nl
