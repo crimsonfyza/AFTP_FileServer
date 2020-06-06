@@ -22,7 +22,7 @@ connect the users to the fileservers IP or if on the same computer localhost, if
 ![](screenshots/connectedUsers.png)
 
 # Security
-![](screenshots/Logging.PNG)
+![server](screenshots/logging.PNG)
 
 # Contribute 
 Other developers can give us feedback at filedevelopers@avans.nl
