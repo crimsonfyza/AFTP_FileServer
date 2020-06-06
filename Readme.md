@@ -12,7 +12,7 @@ To setup the application for the "first use" read #How to use
 # How to use 
 Run FileServer, FileServer will use port: "25444", make sure this port is available.
 If the application says "Server started." the application is running, as shown in the screenshot below. 
-![](screenshots/startedApplication.png)   
+![](screenshots/startedApplication.PNG)   
 
 If the application doesn't run, the port is currently in use. The application will than show the error "Port already in use."
 
